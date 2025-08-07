@@ -5,6 +5,10 @@
 > 🚀 Secure Agent scans your Python dependencies and flags known vulnerabilities using a simple CLI that can be run in CI, staging, or locally.
 
 ---
+## 🏗 Architecture Diagram
+![Project Architecture](./secure_agent_architecture.png)
+
+---
 
 ## 📦 Features
 
@@ -17,6 +21,7 @@
 ---
 
 ## 🛠 Project Structure
+```plaintext
 secure-agent/
 ├── Dockerfile
 ├── cli.py
@@ -33,6 +38,8 @@ secure-agent/
 ├── README.md
 └── tests/
    └── test_scanner.py
+```
+
 
 ---
 
