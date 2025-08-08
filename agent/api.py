@@ -4,8 +4,10 @@ from agent.core import scan_dependencies
 
 app = FastAPI()
 
+
 class ScanRequest(BaseModel):
     file_path: str
+
 
 @app.post("/scan")
 def run_scan(request: ScanRequest):

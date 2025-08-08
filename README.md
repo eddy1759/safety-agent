@@ -34,6 +34,29 @@ secure-agent/
 └── tests/
    └── test_scanner.py
 
+```mermaid
+graph TD
+    A[User] -->|CLI or HTTP| B[Secure Agent Toolkit]
+    B --> C[Scanner Core]
+    C --> D[Dependency File Parser]
+    C --> E[Vulnerability Checker]
+    E --> F[Known Vulnerability Database]
+
+    B -.->|CLI| G[cli.py]
+    B -.->|API| H[FastAPI Endpoint]
+
+    subgraph Modules
+        C
+        D
+        E
+    end
+
+    subgraph Interfaces
+        G
+        H
+    end
+```
+
 ---
 
 ## 🐳 Docker Usage

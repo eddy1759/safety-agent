@@ -2,10 +2,9 @@
   "name": "Secure Agent Toolkit Dev",
   "build": {
     "dockerfile": "../Dockerfile",
-    "target": "final" // We can develop in the final image
+    "target": "final" 
   },
 
-  // Configure tool-specific properties.
   "customizations": {
     "vscode": {
       "extensions": [
@@ -16,12 +15,9 @@
     }
   },
 
-  // Use 'postCreateCommand' to install dependencies after the container is created.
   "postCreateCommand": "poetry install --with dev",
 
-  // Forward the port for the API.
   "forwardPorts": [8000],
 
-  // Run as the non-root user from the Dockerfile.
   "remoteUser": "safetyagentuser"
 }

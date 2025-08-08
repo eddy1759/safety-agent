@@ -5,33 +5,47 @@ from agent.core import scan_dependencies
 
 app = typer.Typer()
 
-@app.command()
-def scan(file_path: str):
-    """Run the security agent on a given requirements file."""
+
+def format_json_output(data: dict) -> str:
+    """
+    Format JSON output in a clean, readable way.
+    """
+    return json.dumps(data, indent=2, ensure_ascii=False, separators=(",", ": "))
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    file_path: str = typer.Argument(
+        ..., help="The path to the requirements file to scan."
+    ),
+):
+    """
+    Run the security agent on a given requirements file.
+    """
     try:
         result = scan_dependencies(file_path)
-        
-        # Pretty-print the JSON result
-        print(json.dumps(result, indent=2))
-
-        # Exit with non-zero code if vulnerabilities are found
-        if result.get("error"):
-            print(f"\nScan failed: {result['error']}", file=sys.stderr)
-            sys.exit(1)
-        elif result.get("raw_report") and isinstance(result["raw_report"], dict):
-            vulnerabilities = result["raw_report"].get("vulnerabilities", [])
-            if vulnerabilities:
-                print(f"\nScan complete. Found {len(vulnerabilities)} vulnerable package(s).")
-                sys.exit(1)
-            else:
-                print("\nScan complete. No vulnerabilities found.")
-                sys.exit(0)
-        else:
-            print("\nScan complete. No vulnerabilities found.")
-            sys.exit(0)
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"A critical error occurred during the scan: {e}", file=sys.stderr)
+        raise typer.Exit(code=1)
+
+    print(format_json_output(result))
+
+    if result.get("error"):
+        print(f"\n❌ SCAN FAILED: {result['error']}", file=sys.stderr)
+        raise typer.Exit(code=1)
+
+    if result.get("vulnerabilities_found"):
+        vuln_count = result.get("vulnerability_count", 0)
+        pkg_count = result.get("package_count", 0)
+        print(
+            f"\n⚠️  VULNERABILITIES DETECTED: {vuln_count} issues in {pkg_count} package(s)",
+            file=sys.stderr,
+        )
+        raise typer.Exit(code=1)
+    else:
+        print(f"\n✅ SCAN COMPLETE: No vulnerabilities found", file=sys.stderr)
+        raise typer.Exit(code=0)
+
 
 if __name__ == "__main__":
     app()

@@ -15,16 +15,19 @@ def test_scan_with_vulnerabilities_and_mocked_llm(mock_get_llm_summary):
     with patch('agent.core.subprocess.run') as mock_run:
         # Simulate safety finding vulnerabilities
         mock_result = Mock()
-        mock_result.stdout = '''[
-            {
-                "package": "django",
-                "installed": "1.8",
-                "affected": "<2.2.13",
-                "id": "12345",
-                "more_info_url": "https://example.com/vuln/12345",
-                "vulnerability": "SQL injection vulnerability"
-            }
-        ]'''
+        mock_result.stdout = '''{
+            "report_meta": {},
+            "vulnerabilities": [
+                {
+                    "package_name": "django",
+                    "installed_version": "1.8",
+                    "affected_versions": "<2.2.13",
+                    "vulnerability_id": "12345",
+                    "advisory": "SQL injection vulnerability"
+                }
+            ],
+            "remediations": {}
+        }'''
         mock_result.returncode = 1  # Non-zero indicates vulnerabilities found
         mock_run.return_value = mock_result
 

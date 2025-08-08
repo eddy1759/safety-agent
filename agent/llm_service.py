@@ -1,78 +1,69 @@
 import os
+import sys
 import json
-from openai import OpenAI
+import traceback
 
-def get_openai_client():
+import google.generativeai as genai
+
+
+def configure_google_model():
     """
-    Initialize OpenAI client with proper API key handling.
+    Configures and returns a Google Gemini model instance.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
-    
-    if not api_key:
-        print("Warning: OPENAI_API_KEY environment variable not set.")
-        return None
-    
     try:
-        client = OpenAI(api_key=api_key)
-        return client
+        api_key = os.getenv("GOOGLE_API_KEY")
+
+        if not api_key:
+            print(
+                "Warning: GOOGLE_API_KEY environment variable not set.", file=sys.stderr
+            )
+            return None
+
+        genai.configure(api_key=api_key)
+
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        return model
     except Exception as e:
-        print(f"Warning: OpenAI client could not be initialized. Error: {e}")
+        print(
+            f"Warning: Google Gemini model could not be initialized. Error: {e}",
+            file=sys.stderr,
+        )
         return None
 
-# Initialize the client
-client = get_openai_client()
-    
-def get_llm_summary(vulnerability_report: dict) -> str:
-    """
-    Generates a summary of the vulnerability report using OpenAI's LLM.
-    """
-    if client is None:
-        return "LLM service is not available. Please check your OPENAI_API_KEY environment variable."
 
-    # Handle both old and new safety report formats
-    vulnerabilities = []
-    if isinstance(vulnerability_report, dict):
-        vulnerabilities = vulnerability_report.get("vulnerabilities", [])
-    elif isinstance(vulnerability_report, list):
-        vulnerabilities = vulnerability_report
-    
-    if not vulnerabilities:
-        return "No vulnerabilities found or report is empty."
-    
-    # Convert the dict to a JSON string for the prompt
+model = configure_google_model()
+
+
+def get_llm_summary(vulnerability_report: dict | list) -> str:
+    """
+    Generates a summary of the vulnerability report using Google Gemini.
+    """
+    if model is None:
+        return (
+            "Google Gemini service is not available. Please check your GOOGLE_API_KEY."
+        )
+
     report_json_str = json.dumps(vulnerability_report, indent=2)
-    
-    prompt = f"""
-    You are a security expert assistant. Your task is to analyze a JSON security report from the 'safety' library and provide a clear, concise, and actionable summary for a developer.
 
-    Here is the security report:
+    prompt = f"""
+    You are a security expert assistant. Your task is to analyze the following simplified JSON security report and provide a clear, concise, and actionable summary for a developer. The report contains one or more vulnerable packages.
+
+    Here is the simplified security report:
     ```json
     {report_json_str}
     ```
 
-    Please provide a response in Markdown format with the following sections:
-
-    ### Executive Summary
-    A brief, one-paragraph summary of the findings. Mention the number of vulnerabilities and the highest severity level found.
-
-    ### Vulnerability Details
-    For each vulnerability, provide:
-    - **Package:** The name of the vulnerable package.
-    - **Impact:** A simple, one-sentence explanation of the potential risk.
-    - **Recommendation:** The specific action to take, like "Upgrade to version `X.Y.Z` or higher."
-
-    ### Overall Recommendation
-    Provide a final, clear recommendation on the next steps. For example, suggest creating a new `requirements.txt` with the fixed versions.
+     ### Next Steps
+    [1-2 sentences with immediate action items]
     """
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful security expert assistant."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        return f"Error communicating with LLM API: {e}"
+        print(
+            f"ERROR: An error occurred while communicating with the Google Gemini API.",
+            file=sys.stderr,
+        )
+        traceback.print_exc()
+        return f"Error communicating with Google Gemini API: {e}"
